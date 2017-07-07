@@ -18,7 +18,7 @@ class PaginatorClientSession(aiohttp.ClientSession):
         :param pag_helper: PaginatorHelper to define pagination
         :param buffer_size: number of simultaneous requests
         :param keep_order: returns pages keeping order.
-        :return: aiohttp.ClientResponse
+        :return: async generator of aiohttp.ClientResponse
         """
         return _Paginator(self, 'get', pag_helper, buffer_size, keep_order)
 
@@ -28,7 +28,7 @@ class PaginatorClientSession(aiohttp.ClientSession):
         :param pag_helper: PaginatorHelper to define pagination
         :param buffer_size: number of simultaneous requests
         :param keep_order: returns pages keeping order.
-        :return: aiohttp.ClientResponse
+        :return: async generator of aiohttp.ClientResponse
         """
         return _Paginator(self, 'post', pag_helper, buffer_size, keep_order)
 

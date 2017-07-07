@@ -3,8 +3,8 @@ Based on aiohttp, provides an http client to iterate over paginated requests.
 
 ## Usage
 A PaginatorHelper is required to implement how pagination works for the specific endpoint.
-This would be an example where pagination works by `max` and `offset` as part of the querystring,
-where the total number of elements is placed in a response header:
+This would be an example where pagination works by `limit` and `offset` as part of the querystring,
+where the total number of elements is part of the response body:
 ```python
 import aiohttppag
 import math
@@ -27,9 +27,9 @@ class SpotifyPaginatorHelper(aiohttppag.PaginatorHelper):
         return self.kwargs
 ```
 You need to implement the following methods:
-- num_pages: total number of pages based on the response of the first request
-- next_url: based on the page, provides the next url to be requested
-- next_request_params: as next_url, provides the parameters that will be passed 
+- `num_pages`: total number of pages based on the response of the first request
+- `next_url`: based on the page, provides the next url to be requested
+- `next_request_params`: as next_url, provides the parameters that will be passed 
 to [aiohttp.ClientSession.request](http://aiohttp.readthedocs.io/en/stable/client_reference.html#aiohttp.ClientSession.request)
 
 
@@ -50,7 +50,7 @@ async def main():
                                         headers={'Authorization': 'Bearer {}'.format(SPOTIFY_TOKEN)})
 
     async with aiohttppag.PaginatorClientSession(connector=conn) as session:
-        async for response in session.pget(pag_helper, buffer_size=1, keep_order=False):
+        async for response in session.pget(pag_helper, buffer_size=2, keep_order=False):
             categories = await response.json()
             list(map(lambda c: print(c['name']), categories['categories']['items']))
 
@@ -59,6 +59,11 @@ if __name__ == '__main__':
     asyncio.get_event_loop()run_until_complete(main())
     
 ```
+
+`pget` and `ppost` parameters:
+- `aiohttppag.PaginatorHelper`
+- `buffer_size`: number of simultaneous requests
+- `keep_order`: returns pages keeping order
 
 ## Known issues
 Aiohttp paginator cannot be used if total number of results is not provided by the first request. I.e:
