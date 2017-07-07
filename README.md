@@ -1,4 +1,4 @@
-# aiohttp paginator: Async http client for paginated requests
+# aiohttp paginator: Async http client for endpoints supporting pagination
 Based on aiohttp, provides an http client to iterate over paginated requests.
 
 ## Usage
@@ -9,15 +9,16 @@ where the total number of elements is placed in a response header:
 import aiohttppag
 import math
 
-class TbPaginatorHelper(aiohttppag.PaginatorHelper):
+class SpotifyPaginatorHelper(aiohttppag.PaginatorHelper):
 
-    def __init__(self, url, *, max_results=100, **kwargs):
-        self.url = '{}?max={}'.format(url, max_results)
-        self.max_results = max_results
+    def __init__(self, url, *, limit=100, **kwargs):
+        self.url = '{}?limit={}'.format(url, limit)
+        self.max_results = limit
         self.kwargs = kwargs
 
-    def num_pages(self, response):
-        return math.ceil(int(response.headers.get('X-totalCount', 0)) / self.max_results)
+    async def num_pages(self, response):
+        first_page = await response.json()
+        return math.ceil(int(next(iter(first_page.values()))['total']) / self.max_results)
 
     def next_url(self, page):
         return '{}&offset={}'.format(self.url, (page - 1) * self.max_results)
@@ -40,17 +41,25 @@ import aiohttppag
 import asyncio
 import aiohttp
 
+SPOTIFY_TOKEN = 'Token'
 
 async def main():
-    pag_helper = TbPaginatorHelper('http://api.example.com/events', max_results=10,
-                                   auth=aiohttp.BasicAuth('user', 'pass'))
+    conn = aiohttp.TCPConnector(family=socket.AF_INET, verify_ssl=False)
+    pag_helper = SpotifyPaginatorHelper('https://api.spotify.com/v1/browse/categories',
+                                        limit=10,
+                                        headers={'Authorization': 'Bearer {}'.format(SPOTIFY_TOKEN)})
 
-    async with aiohttppag.PaginatorClientSession() as session:
+    async with aiohttppag.PaginatorClientSession(connector=conn) as session:
         async for response in session.pget(pag_helper, buffer_size=1, keep_order=False):
-            print(await response.text())
+            categories = await response.json()
+            list(map(lambda c: print(c['name']), categories['categories']['items']))
 
 if __name__ == '__main__':
 
     asyncio.get_event_loop()run_until_complete(main())
     
 ```
+
+## Known issues
+Aiohttp paginator cannot be used if total number of results is not provided by the first request. I.e:
+those providing `next` url without `total` results.

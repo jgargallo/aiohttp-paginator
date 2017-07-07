@@ -65,7 +65,7 @@ class _Paginator:
 
     async def _get_first_page(self):
         res = await self._fetch()
-        self.num_pages = self.pag_helper.num_pages(res[0])
+        self.num_pages = await self.pag_helper.num_pages(res[0])
 
         await self._create_next_tasks()
 
@@ -104,7 +104,7 @@ class PaginatorHelper(object, metaclass=abc.ABCMeta):
     """A paginator helper is required to implement how pagination works"""
 
     @abc.abstractmethod
-    def num_pages(self, response):
+    async def num_pages(self, response):
         """
 
         :param response: aiohttp.ClientResponse from the first requested page
