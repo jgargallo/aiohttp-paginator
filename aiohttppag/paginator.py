@@ -50,7 +50,7 @@ class _Paginator:
         self.done = set()
         self.not_done = set()
 
-    async def __aiter__(self):
+    def __aiter__(self):
         return self
 
     async def _fetch(self, page=1):
